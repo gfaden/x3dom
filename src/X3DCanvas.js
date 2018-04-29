@@ -497,6 +497,18 @@ x3dom.X3DCanvas.prototype.bindEventListeners = function() {
             if (doc == null)
                 doc = this.parent.doc;
 
+	    var pos = this.parent.mousePosition(evt.touches[0]);
+            this.mouse_button = 0;
+            this.parent.doc.onMove(that.gl, pos.x, pos.y, this.mouse_button);
+            if (doc._viewarea._currentInputType == x3dom.InputTypes.INTERACTION) {
+                this.mouse_drag_x = pos.x;
+                this.mouse_drag_y = pos.y;
+                this.mouse_dragging = true;
+                this.mouse_button = 1;
+                this.parent.doc.onMousePress(that.gl, this.mouse_drag_x, this.mouse_drag_y, this.mouse_button);
+		doc.needRender = true;
+		return;
+	    }		    
             var navi = doc._scene.getNavigationInfo();
 
             switch(navi.getType()) {
@@ -513,7 +525,7 @@ x3dom.X3DCanvas.prototype.bindEventListeners = function() {
 
             touches.lastLayer = [];
 
-            var i, pos;
+            var i;
             for(i = 0; i < evt.touches.length; i++) {
                 pos = this.parent.mousePosition(evt.touches[i]);
                 touches.lastLayer.push([evt.touches[i].identifier, new x3dom.fields.SFVec2f(pos.x,pos.y)]);
@@ -575,6 +587,16 @@ x3dom.X3DCanvas.prototype.bindEventListeners = function() {
             var rotMatrix = null;
 
             var touch0, touch1, distance, middle, squareDistance, deltaMiddle, deltaZoom, deltaMove;
+            if (doc._viewarea._currentInputType == x3dom.InputTypes.INTERACTION) {
+                    pos = this.parent.mousePosition(evt.touches[0]);
+                this.mouse_drag_x = pos.x;
+                this.mouse_drag_y = pos.y;
+                if (this.mouse_dragging) {
+                        this.parent.doc.onDrag(that.gl, this.mouse_drag_x, this.mouse_drag_y, this.mouse_button);
+                }
+                doc.needRender = true;
+                return;
+            }
 
             if (touches.examineNavType == 1) {
                 /*
@@ -676,7 +698,14 @@ x3dom.X3DCanvas.prototype.bindEventListeners = function() {
                     dblClick = true;
                 touches.numTouches = evt.touches.length;
             }
-
+            if (doc._viewarea._currentInputType == x3dom.InputTypes.INTERACTION) {
+                this.classList.remove('x3dom-canvas-mousedown');
+                this.mouse_button = 0;
+                this.mouse_dragging = false;
+                this.parent.doc.onMouseRelease(that.gl, this.mouse_drag_x, this.mouse_drag_y, this.mouse_button, 0);
+                this.parent.doc.needRender = true;
+                return;
+            } 
             if (touches.examineNavType == 1) {
                 for(var i = 0; i < touches.lastLayer.length; i++) {
                     var pos = touches.lastLayer[i][1];
